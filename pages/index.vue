@@ -16,7 +16,11 @@
                             <tr>
                                 <td>{{ item.name }}</td>
                                 <td>{{ item.description }}</td>
-                                <td>{{ item.html_url }}</td>
+                                <td>
+                                    <a :href="item.html_url">
+                                        {{ item.html_url }}
+                                    </a>
+                                </td>
                             </tr>
                         </template>
 
@@ -32,11 +36,41 @@
 <script setup>
 
 const repos = ref([])
+//初始化的30筆
+const downloaded_Page = ref(30)
+
+//新的repos從第4頁開始載入
+const page = ref(4)
+
 const pending = ref(true)
 
-const fetchRepos = async () => {
+const config = useRuntimeConfig()
+
+//初始取得前30筆repos
+const fetchRepos_init = async () => {
     try {
-        const data = await $fetch('https://api.github.com/orgs/microsoft/repos?per_page=30&sort=updated')
+        const token = config.public.githubToken
+        const data = await $fetch(`https://api.github.com/orgs/microsoft/repos?per_page=${downloaded_Page.value}&sort=updated`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github+json'
+            }
+        })
+        repos.value = data
+    } catch (error) {
+        console.error('抓取失敗:', error)
+    } finally {
+        pending.value = false
+    }
+}
+
+//根據滑動載入新的頁面(資料)
+/* per_page：每一頁要顯示幾個（最高可設為 100）。
+ page：你要看第幾頁。*/
+const fetchRepos_addPage = async () => {
+    try {
+        const token = config.public.githubToken
+        const data = await $fetch(`https://api.github.com/orgs/microsoft/repos?per_page=10&page=${page.value}&sort=updated`)
         repos.value = data
     } catch (error) {
         console.error('抓取失敗:', error)
@@ -46,7 +80,7 @@ const fetchRepos = async () => {
 }
 
 onMounted(() => {
-    fetchRepos()
+    fetchRepos_init()
 })
 </script>
 
