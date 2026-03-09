@@ -1,8 +1,8 @@
 <template>
   <div>
     <main>
-      <h1>關於我</h1>
-      <p>我是 陳允中</p>
+      <h1>關於</h1>
+      
     </main>
   </div>
 </template>

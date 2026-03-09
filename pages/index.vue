@@ -13,23 +13,20 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <template v-for="item in repos">
+                        <template v-for="item in repos" :key=item.id>
                             <tr>
-                                <td>{{ item.name }}</td>
-                                <td>{{ item.description }}</td>
-                                <td>
-                                    <a :href="item.html_url">
-                                        {{ item.html_url }}
-                                    </a>
+                                <td data-label="Title">{{ item.name }}</td>
+                                <td data-label="Description">{{ item.description }}</td>
+                                <td data-label="URL">
+                                    <a :href="item.html_url">{{ item.html_url }}</a>
                                 </td>
                             </tr>
                         </template>
-
                         <tr ref="loadMoreTrigger" class="loading-trigger">
-                            <td colspan="3">
+                            <td colspan="3" style="vertical-align: middle;">
                                 <p v-if="isLoading">載入中...</p>
+                                <p v-if="isAll">已載入所有資料</p>
                             </td>
-
                         </tr>
                     </tbody>
                 </table>
@@ -41,16 +38,25 @@
     </main>
 </template>
 <script setup>
-
+//資料
 const repos = ref([])
+
 //初始化的30筆
 const downloaded_Page = ref(30)
 
 //新的repos從第4頁開始載入
 const page = ref(4)
 
+//讀取中
 const isLoading = ref(true)
+
+//已載入所有資料
+const isAll = ref(false)
+
+//定義螢幕觀察者
 const loadMoreTrigger = ref(null); // 對應 HTML 中的 ref
+
+//觀察者實體
 let observer = null;
 
 //取得環境變數token
@@ -67,6 +73,9 @@ const fetchRepos_init = async () => {
             }
         })
         repos.value = data
+        if (data.length == 0) {
+            isAll.value = true
+        }
     } catch (error) {
         console.error('抓取失敗:', error)
     } finally {
@@ -79,12 +88,23 @@ const fetchRepos_init = async () => {
  page：你要看第幾頁。*/
 const fetchRepos_addPage = async () => {
     try {
+        console.log(page.value)
         const token = config.public.githubToken
-        const data = await $fetch(`https://api.github.com/orgs/microsoft/repos?per_page=10&page=${page.value}&sort=updated`)
+        const data = await $fetch(`https://api.github.com/orgs/microsoft/repos?per_page=10&page=${page.value}&sort=updated`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github+json'
+            }
+        })
         repos.value = [...repos.value, ...data]
+        if (data.length == 0) {
+            isAll.value = true
+        }
     } catch (error) {
         console.error('抓取失敗:', error)
     } finally {
+
+        page.value++
         isLoading.value = false
     }
 }
@@ -93,6 +113,12 @@ onMounted(() => {
     fetchRepos_init()
     //實例化觀察者
     observer = new IntersectionObserver((entries) => {
+
+
+        if (page.value > 6) {
+            isAll.value = true
+            return
+        }
         // entries[0] 就是我們的 loadMoreTrigger
         if (entries[0].isIntersecting && !isLoading.value) {
             console.log("偵測到觸底，載入下一頁...");
@@ -139,10 +165,62 @@ p {
         overflow: hidden;
         background: white;
 
+
+
         table {
             width: 100%;
             border-collapse: collapse;
-            text-align: left;
+
+            @include respond-to('lg') {
+                border: 0;
+
+                thead {
+                    display: none; // 隱藏原本的表頭
+                }
+
+                tr {
+                    display: block; // 讓每一列變成一個獨立區塊
+                    margin-bottom: 1.5rem;
+                    border: 1px solid #eee;
+                    border-radius: 12px;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                    background: #fff;
+                    padding: 10px;
+                }
+
+                td {
+                    display: flex; // 讓內容與標籤橫向排列
+                    justify-content: flex-start;
+                    align-items: center;
+                    border-bottom: 1px solid #f0f0f0;
+                    padding: 12px 8px;
+                    text-align: left;
+                    font-size: 0.9rem;
+
+                    &:last-child {
+                        border-bottom: 0;
+                    }
+
+                    // 使用偽元素產生左側標籤
+                    &::before {
+                        content: attr(data-label); // 自動抓取 HTML 上的 data-label
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        color: #42b883; // 統一使用 Nuxt 綠
+                        margin-right: 1rem;
+                        flex-shrink: 0;
+                        width: 100px;
+                        text-align: center;
+                    }
+
+                    // 調整 URL 在手機版的顯示，避免撐開
+                    a {
+                        word-break: break-all;
+                        // max-width: 200px;
+                        display: inline-block;
+                    }
+                }
+            }
 
             thead {
                 background-color: #42b883; // Nuxt 綠色
@@ -169,6 +247,9 @@ p {
 
                     &:last-child {
                         border-bottom: none;
+                    }
+                    p{
+                        margin-bottom: 0;
                     }
                 }
 

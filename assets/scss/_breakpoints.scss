@@ -1,0 +1,28 @@
+@use "sass:map";
+// 定義斷點尺寸
+$breakpoints: (
+    'xs': 480px,
+    // 極小螢幕 (手機直向)
+    'sm': 576px,
+    // 小螢幕 (手機橫向)
+    'md': 768px,
+    // 中螢幕 (平板)
+    'lg': 992px,
+    // 大螢幕 (筆電)
+    'xl': 1200px,
+    // 超大螢幕 (桌機)
+    'xxl': 1400px // 寬螢幕
+);
+
+// 建立 Mixin 方便呼叫
+@mixin respond-to($breakpoint) {
+    @if map.has-key($breakpoints, $breakpoint) {
+        @media (max-width: map.get($breakpoints, $breakpoint)) {
+            @content;
+        }
+    }
+
+    @else {
+        @warn "找不到斷點：#{$breakpoint}";
+    }
+}

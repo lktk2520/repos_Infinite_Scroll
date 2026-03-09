@@ -2,7 +2,7 @@
   <div>
     <nav>
       <NuxtLink to="/">無限滾動</NuxtLink>
-      <NuxtLink to="/about">關於我</NuxtLink>
+      <NuxtLink to="/about">關於</NuxtLink>
     </nav>
     <NuxtPage />
   </div>

@@ -14,5 +14,16 @@ export default defineNuxtConfig({
   features: {
     // 強制將 CSS 內聯到 HTML 中，這能徹底解決「先看到 HTML 才看到樣式」的問題
     inlineStyles: true
+  },
+  vite: {
+    css: {
+      preprocessorOptions: {
+        scss: {
+          // 自動在每個 SCSS 區塊最前面加上這行，
+          // 注意：Nuxt 4 / Vite 5+ 建議使用 additionalData
+          additionalData: '@use "@/assets/scss/_breakpoints.scss" as *;'
+        }
+      }
+    }
   }
 })
