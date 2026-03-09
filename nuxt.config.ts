@@ -10,5 +10,9 @@ export default defineNuxtConfig({
     public: {
       githubToken: process.env.NUXT_GITHUB_TOKEN
     }
+  },
+  features: {
+    // 強制將 CSS 內聯到 HTML 中，這能徹底解決「先看到 HTML 才看到樣式」的問題
+    inlineStyles: true
   }
 })
