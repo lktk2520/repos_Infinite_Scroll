@@ -1,157 +1,6 @@
-<!-- <template>
-    <main class="home-page">
-        <h1>您好！這是無限滾動專案示例</h1>
-        <p>
-            Data source: GitHub REST API (Author: microsoft)
-        </p>
-        <p>
-            Author: 陳允中(Henrry)
-        </p>
-        <div class="container">
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>title</th>
-                            <th>description</th>
-                            <th>url</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <template v-for="item in repos" :key=item.id>
-                            <tr>
-                                <td data-label="Title">{{ item.name }}</td>
-                                <td data-label="Description">{{ item.description }}</td>
-                                <td data-label="URL">
-                                    <a :href="item.html_url" target="_blank">{{ item.html_url }}</a>
-                                </td>
-                            </tr>
-                        </template>
-                        <tr ref="loadMoreTrigger" class="loading-trigger">
-                            <td colspan="3" style="vertical-align: middle;">
-                                <p v-if="isLoading">載入中...</p>
-                                <p v-if="isAll">已載入所有資料</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-
-
-    </main>
-</template>
-<script setup>
-//資料
-const repos = ref([])
-
-//初始化的30筆
-const downloaded_Page = ref(30)
-
-//新的repos從第4頁開始載入
-const page = ref(4)
-
-//讀取中
-const isLoading = ref(true)
-
-//已載入所有資料
-const isAll = ref(false)
-
-//定義螢幕觀察者
-const loadMoreTrigger = ref(null); // 對應 HTML 中的 ref
-
-//觀察者實體
-let observer = null;
-
-//取得環境變數token
-const config = useRuntimeConfig()
-
-//初始取得前30筆repos
-const fetchRepos_init = async () => {
-    try {
-        const token = config.public.githubToken
-        const data = await $fetch(`https://api.github.com/orgs/microsoft/repos?per_page=${downloaded_Page.value}&sort=updated`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/vnd.github+json'
-            }
-        })
-        repos.value = data
-        if (data.length == 0) {
-            isAll.value = true
-        }
-    } catch (error) {
-        console.error('抓取失敗:', error)
-    } finally {
-        isLoading.value = false
-    }
-}
-
-//根據滑動載入新的頁面(資料)
-/* per_page：每一頁要顯示幾個（最高可設為 100）。
- page：你要看第幾頁。*/
-
-const fetchRepos_addPage = async () => {
-    try {
-        console.log(page.value)
-        const token = config.public.githubToken
-        const data = await $fetch(`https://api.github.com/orgs/microsoft/repos?per_page=10&page=${page.value}&sort=updated`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/vnd.github+json'
-            }
-        })
-        repos.value = [...repos.value, ...data]
-        if (data.length == 0) {
-            isAll.value = true
-        }
-    } catch (error) {
-        console.error('抓取失敗:', error)
-    } finally {
-
-        page.value++
-        isLoading.value = false
-    }
-}
-
-onMounted(() => {
-    fetchRepos_init()
-    //實例化觀察者
-    observer = new IntersectionObserver((entries) => {
-
-
-        if (page.value > 6) {
-            isAll.value = true
-            return
-        }
-        // entries[0] 就是我們的 loadMoreTrigger
-        if (entries[0].isIntersecting && !isLoading.value) {
-            console.log("偵測到觸底，載入下一頁...");
-            isLoading.value = true;
-            fetchRepos_addPage();
-        }
-    }, {
-        root: null, // 預設為瀏覽器視窗
-        rootMargin: '0px 0px 200px 0px', // 提早 200px 觸發，使用者體驗更好，不會看到斷層
-        threshold: 0.1 // 哨兵出現 10% 就觸發
-    });
-
-    //
-    if (loadMoreTrigger.value) {
-        observer.observe(loadMoreTrigger.value);
-    }
-})
-
-//清理，避免記憶體洩漏
-onUnmounted(() => {
-    if (observer) observer.disconnect();
-});
-</script> -->
-
 <template>
     <main class="home-page">
-        <h1>您好！這是無限滾動專案示例</h1>
+        <h1>您好！這是無限滾動專案示例 ( 模擬載入60筆 ) </h1>
         <p>Data source: GitHub REST API (Author: microsoft)</p>
         <p>Author: 陳允中(Henrry)</p>
         <div class="container">
@@ -188,7 +37,7 @@ onUnmounted(() => {
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 
-// 1. 定義我們「最終想要」的資料結構
+// 定義處理過的資料結構
 interface RepoItem {
     id: number;
     name: string;
@@ -196,7 +45,7 @@ interface RepoItem {
     html_url: string;
 }
 
-// 2. 定義 GitHub API 回傳的原始完整結構 (部分定義即可)
+// 定義 GitHub API 回傳的原始完整結構 (部分定義)
 interface GitHubRawResponse {
     id: number;
     name: string;
@@ -233,10 +82,11 @@ const fetchRepos_init = async () => {
     try {
         const token = config.public.githubToken
         const data = await $fetch<GitHubRawResponse[]>(`https://api.github.com/orgs/microsoft/repos?per_page=${downloaded_Page.value}&sort=updated`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/vnd.github+json'
-            }
+            // 開發環境用token
+            // headers: {
+            //     'Authorization': `Bearer ${token}`,
+            //     'Accept': 'application/vnd.github+json'
+            // }
         })
 
         // --- 在這裡處理物件 ---
@@ -255,10 +105,11 @@ const fetchRepos_addPage = async () => {
     try {
         const token = config.public.githubToken
         const data = await $fetch<GitHubRawResponse[]>(`https://api.github.com/orgs/microsoft/repos?per_page=10&page=${page.value}&sort=updated`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/vnd.github+json'
-            }
+            // 開發環境用token
+            // headers: {
+            //     'Authorization': `Bearer ${token}`,
+            //     'Accept': 'application/vnd.github+json'
+            // }
         })
 
         // --- 在這裡處理物件並合併 ---
@@ -418,6 +269,7 @@ p {
                     padding: 12px 15px;
                     color: #444;
                     line-height: 1.5;
+                    word-break: break-all;
 
                     &.font-bold {
                         font-weight: 600;
