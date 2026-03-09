@@ -1,6 +1,7 @@
 <template>
     <main class="home-page">
         <h1>您好！這是無限滾動專案示例</h1>
+        <p>Data source: GitHub REST API (Author: microsoft)</p>
         <div class="container">
             <div class="table-container">
                 <table>
@@ -24,6 +25,12 @@
                             </tr>
                         </template>
 
+                        <tr ref="loadMoreTrigger" class="loading-trigger">
+                            <td colspan="3">
+                                <p v-if="isLoading">載入中...</p>
+                            </td>
+
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -42,8 +49,11 @@ const downloaded_Page = ref(30)
 //新的repos從第4頁開始載入
 const page = ref(4)
 
-const pending = ref(true)
+const isLoading = ref(true)
+const loadMoreTrigger = ref(null); // 對應 HTML 中的 ref
+let observer = null;
 
+//取得環境變數token
 const config = useRuntimeConfig()
 
 //初始取得前30筆repos
@@ -60,7 +70,7 @@ const fetchRepos_init = async () => {
     } catch (error) {
         console.error('抓取失敗:', error)
     } finally {
-        pending.value = false
+        isLoading.value = false
     }
 }
 
@@ -71,25 +81,51 @@ const fetchRepos_addPage = async () => {
     try {
         const token = config.public.githubToken
         const data = await $fetch(`https://api.github.com/orgs/microsoft/repos?per_page=10&page=${page.value}&sort=updated`)
-        repos.value = data
+        repos.value = [...repos.value, ...data]
     } catch (error) {
         console.error('抓取失敗:', error)
     } finally {
-        pending.value = false
+        isLoading.value = false
     }
 }
 
 onMounted(() => {
     fetchRepos_init()
+    //實例化觀察者
+    observer = new IntersectionObserver((entries) => {
+        // entries[0] 就是我們的 loadMoreTrigger
+        if (entries[0].isIntersecting && !isLoading.value) {
+            console.log("偵測到觸底，載入下一頁...");
+            isLoading.value = true;
+            fetchRepos_addPage();
+        }
+    }, {
+        root: null, // 預設為瀏覽器視窗
+        rootMargin: '0px 0px 200px 0px', // 提早 200px 觸發，使用者體驗更好，不會看到斷層
+        threshold: 0.1 // 哨兵出現 10% 就觸發
+    });
+
+    //
+    if (loadMoreTrigger.value) {
+        observer.observe(loadMoreTrigger.value);
+    }
 })
+
+//清理，避免記憶體洩漏
+onUnmounted(() => {
+    if (observer) observer.disconnect();
+});
 </script>
 
-<style lang="scss">
-h1 {
+<style lang="scss" scoped>
+h1,
+p {
     text-align: center;
     color: #2c3e50;
     margin-bottom: 2rem;
 }
+
+
 
 .container {
     max-width: 1000px;
