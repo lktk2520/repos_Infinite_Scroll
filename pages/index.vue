@@ -1,7 +1,12 @@
-<template>
+<!-- <template>
     <main class="home-page">
         <h1>您好！這是無限滾動專案示例</h1>
-        <p>Data source: GitHub REST API (Author: microsoft)</p>
+        <p>
+            Data source: GitHub REST API (Author: microsoft)
+        </p>
+        <p>
+            Author: 陳允中(Henrry)
+        </p>
         <div class="container">
             <div class="table-container">
                 <table>
@@ -18,7 +23,7 @@
                                 <td data-label="Title">{{ item.name }}</td>
                                 <td data-label="Description">{{ item.description }}</td>
                                 <td data-label="URL">
-                                    <a :href="item.html_url">{{ item.html_url }}</a>
+                                    <a :href="item.html_url" target="_blank">{{ item.html_url }}</a>
                                 </td>
                             </tr>
                         </template>
@@ -86,6 +91,7 @@ const fetchRepos_init = async () => {
 //根據滑動載入新的頁面(資料)
 /* per_page：每一頁要顯示幾個（最高可設為 100）。
  page：你要看第幾頁。*/
+
 const fetchRepos_addPage = async () => {
     try {
         console.log(page.value)
@@ -141,8 +147,163 @@ onMounted(() => {
 onUnmounted(() => {
     if (observer) observer.disconnect();
 });
-</script>
+</script> -->
 
+<template>
+    <main class="home-page">
+        <h1>您好！這是無限滾動專案示例</h1>
+        <p>Data source: GitHub REST API (Author: microsoft)</p>
+        <p>Author: 陳允中(Henrry)</p>
+        <div class="container">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>title</th>
+                            <th>description</th>
+                            <th>url</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="item in repos" :key="item.id">
+                            <td data-label="Title">{{ item.name }}</td>
+                            <td data-label="Description">{{ item.description }}</td>
+                            <td data-label="URL">
+                                <a :href="item.html_url" target="_blank">{{ item.html_url }}</a>
+                            </td>
+                        </tr>
+                        <tr ref="loadMoreTrigger" class="loading-trigger">
+                            <td colspan="3" style="vertical-align: middle;">
+                                <p v-if="isLoading">載入中...</p>
+                                <p v-if="isAll">已載入所有資料</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
+
+// 1. 定義我們「最終想要」的資料結構
+interface RepoItem {
+    id: number;
+    name: string;
+    description: string | null;
+    html_url: string;
+}
+
+// 2. 定義 GitHub API 回傳的原始完整結構 (部分定義即可)
+interface GitHubRawResponse {
+    id: number;
+    name: string;
+    description: string | null;
+    html_url: string;
+    [key: string]: any;
+}
+
+// 使用處理後的類型 RepoItem
+const repos = ref<RepoItem[]>([])
+const downloaded_Page = ref<number>(30)
+const page = ref<number>(4)
+const isLoading = ref<boolean>(true)
+const isAll = ref<boolean>(false)
+const loadMoreTrigger = ref<HTMLElement | null>(null)
+
+let observer: IntersectionObserver | null = null
+const config = useRuntimeConfig()
+
+/**
+ * 物件處理函式：將 API 回傳的原始物件轉換為我們需要的格式
+ */
+const transformRepo = (data: GitHubRawResponse[]): RepoItem[] => {
+    return data.map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        html_url: item.html_url
+    }))
+}
+
+// 初始取得前30筆
+const fetchRepos_init = async () => {
+    try {
+        const token = config.public.githubToken
+        const data = await $fetch<GitHubRawResponse[]>(`https://api.github.com/orgs/microsoft/repos?per_page=${downloaded_Page.value}&sort=updated`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github+json'
+            }
+        })
+
+        // --- 在這裡處理物件 ---
+        repos.value = transformRepo(data)
+
+        if (data.length === 0) isAll.value = true
+    } catch (error) {
+        console.error('抓取失敗:', error)
+    } finally {
+        isLoading.value = false
+    }
+}
+
+// 根據滑動載入新的頁面
+const fetchRepos_addPage = async () => {
+    try {
+        const token = config.public.githubToken
+        const data = await $fetch<GitHubRawResponse[]>(`https://api.github.com/orgs/microsoft/repos?per_page=10&page=${page.value}&sort=updated`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github+json'
+            }
+        })
+
+        // --- 在這裡處理物件並合併 ---
+        const newRepos = transformRepo(data)
+        repos.value = [...repos.value, ...newRepos]
+
+        if (data.length === 0) isAll.value = true
+    } catch (error) {
+        console.error('抓取失敗:', error)
+    } finally {
+        page.value++
+        isLoading.value = false
+    }
+}
+
+onMounted(() => {
+    fetchRepos_init()
+
+    observer = new IntersectionObserver((entries: IntersectionObserverEntry[]) => {
+        if (page.value > 6) {
+            isAll.value = true;
+            return;
+        }
+
+        // 使用 optional chaining (?.) 確保 entry 存在
+        if (entries[0]?.isIntersecting && !isLoading.value) {
+            console.log("偵測到觸底...");
+            isLoading.value = true;
+            fetchRepos_addPage();
+        }
+    }, {
+        root: null,
+        rootMargin: '0px 0px 200px 0px',
+        threshold: 0.1
+    });
+
+    if (loadMoreTrigger.value) {
+        observer.observe(loadMoreTrigger.value);
+    }
+})
+
+onUnmounted(() => {
+    if (observer) observer.disconnect();
+});
+</script>
 <style lang="scss" scoped>
 h1,
 p {
@@ -165,11 +326,10 @@ p {
         overflow: hidden;
         background: white;
 
-
-
         table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
 
             @include respond-to('lg') {
                 border: 0;
@@ -248,7 +408,8 @@ p {
                     &:last-child {
                         border-bottom: none;
                     }
-                    p{
+
+                    p {
                         margin-bottom: 0;
                     }
                 }

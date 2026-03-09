@@ -1,8 +1,9 @@
 <template>
   <div>
     <nav>
-      <NuxtLink to="/">無限滾動</NuxtLink>
-      <NuxtLink to="/about">關於</NuxtLink>
+      <!-- <NuxtLink to="/">無限滾動</NuxtLink>
+      <NuxtLink to="/about">關於</NuxtLink> -->
+      無限滾動 Side-Project
     </nav>
     <NuxtPage />
   </div>
@@ -23,6 +24,7 @@ nav {
   display: flex;
   align-items: center;
   padding: 0 40px;
+  color: white;
 
   a {
     color: white;

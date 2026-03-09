@@ -25,5 +25,10 @@ export default defineNuxtConfig({
         }
       }
     }
+  },
+  app: {
+    head: {
+      title: '無限滾動 Side-Project',
+    }
   }
 })
