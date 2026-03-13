@@ -1,7 +1,7 @@
 <template>
     <main class="home-page">
         <h1>您好！這是無限滾動專案示例 ( 模擬載入60筆 ) </h1>
-        <p>Data source: GitHub REST API (Author: microsoft)</p>
+        <p v-highlight:blue>Data source: GitHub REST API (Author: microsoft)</p>
         <p>Author: 陳允中(Henrry)</p>
         <div class="container">
             <div class="table-container">
@@ -35,7 +35,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+// 在 Nuxt 4 中，變數名必須遵循 vLowerCase 格式
+const vHighlight = {
+
+    mounted: (el: any, binding: any, vnode: any, prevNode: any) => {
+        console.log(el);
+        // 透過展開運算子，強制把 Proxy 轉成普通 Object 顯示
+        console.log(binding);
+        console.log(vnode);
+        console.log(prevNode);
+        el.style.backgroundColor = binding.value || 'yellow'
+    }
+
+}
 
 // 定義處理過的資料結構
 interface RepoItem {
@@ -162,8 +174,6 @@ p {
     color: #2c3e50;
     margin-bottom: 2rem;
 }
-
-
 
 .container {
     max-width: 1000px;

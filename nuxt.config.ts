@@ -1,3 +1,5 @@
+import { fileURLToPath } from "url";
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -21,14 +23,16 @@ export default defineNuxtConfig({
         scss: {
           // 自動在每個 SCSS 區塊最前面加上這行，
           // 注意：Nuxt 4 / Vite 5+ 建議使用 additionalData
-          additionalData: '@use "@/assets/scss/_breakpoints.scss" as *;'
+          additionalData: '@use "~/assets/scss/_breakpoints.scss" as *;'
         }
       }
-    }
+    
+  },
   },
   app: {
     head: {
-      title: '無限滾動 Side-Project',
+      title: 'Henrry 的家',
     }
-  }
+  },
+
 })
